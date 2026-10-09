@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/*
+  Base styles for the app.
+  Tailwind v4 uses @import instead of @tailwind directives.
+  All utility classes (like "bg-white", "text-lg", "p-4") are
+  available automatically.
+*/
+
+/* Custom CSS variables for our design system */
+@theme {
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-success: #22c55e;
+  --color-surface: #f8fafc;
+  --color-surface-dark: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-text-secondary: #64748b;
+}

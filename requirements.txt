@@ -1,0 +1,33 @@
+# Web framework
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+
+# Database
+sqlalchemy==2.0.41
+aiosqlite==0.21.0
+
+# Google OAuth & Gmail API
+google-auth==2.40.1
+google-auth-oauthlib==1.2.1
+google-api-python-client==2.166.0
+
+# Gemini AI
+google-genai==1.16.1
+
+# HTTP client (async)
+httpx==0.28.1
+
+# Environment variables
+python-dotenv==1.1.0
+
+# HTML parsing (for cleaning email bodies)
+beautifulsoup4==4.13.4
+
+# Session middleware
+itsdangerous==2.2.0
+
+# Cryptography (for encrypting OAuth tokens at rest)
+cryptography==44.0.3
+
+# Required by SQLAlchemy async
+greenlet==3.5.6

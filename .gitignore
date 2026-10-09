@@ -1,0 +1,53 @@
+# Environment variables (NEVER commit these)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# SQLite database
+*.db
+*.sqlite3
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated files
+node_modules/
+.venv/
+venv/
+.DS_Store
+dist/
+build/
