@@ -1,78 +1,59 @@
-# UniPulse — AI-Powered University Assistant
+# UniPulse 🎓📬
 
-> A smarter way to manage university emails and prioritize what matters.
+**An AI-powered academic email assistant that helps students prioritize important university emails, summarize messages, and stay on top of academic tasks.**
 
-UniPulse is an AI-powered university email assistant designed to help students organize incoming academic emails, understand important messages, and identify what needs their attention.
+UniPulse is a student-focused email productivity tool designed to reduce the effort of managing university emails. It fetches academic emails, organizes them by priority, and uses AI to generate concise summaries so students can focus on what matters most.
 
-Built with React, TypeScript, FastAPI, and Google's AI and Gmail services, UniPulse brings email fetching and AI-assisted prioritization into one interface.
-
-## Screenshots
+## 📸 Screenshots
 
 ### Dashboard
-
-Your central view for working with university emails.
-
 ![UniPulse Dashboard](screenshots/dashboard.png)
 
 ### Fetched Emails
-
-View emails retrieved through the email integration.
-
 ![UniPulse Fetched Emails](screenshots/fetched-emails.png)
 
-### Low-Priority Emails
+### High-Priority Emails
+Quickly identify important academic emails that deserve attention first.
 
-See emails categorized as lower priority to help focus on more important messages first.
+![UniPulse High-Priority Emails](screenshots/high-priority.png)
 
-![UniPulse Low-Priority Emails](screenshots/low-priority.png)
+## ✨ Features
 
-## Features
+- **📥 Academic Email Fetching** — Retrieve and view university emails in one place.
+- **🚦 Priority-Based Organization** — Identify high-priority emails and focus on important academic updates.
+- **🤖 AI-Powered Summarization** — Turn lengthy emails into concise, easier-to-understand summaries.
+- **🎯 Student-Focused Workflow** — Designed around the needs of university students.
+- **🖥️ Web-Based Interface** — Access email information through a dedicated dashboard.
+- **🔌 API Integration** — Backend API endpoints connect the frontend with the application's email and processing functionality.
 
-- **Email integration** — retrieve university emails through the Gmail integration.
-- **AI-assisted email analysis** — use Google's AI services to help process academic email content.
-- **Email prioritization** — organize messages by priority to make important information easier to find.
-- **Dashboard interface** — access email-related features through a central web interface.
-- **Backend API** — handle application logic through a FastAPI backend.
-- **Database integration** — use SQLite with SQLAlchemy for application data.
-- **Modern frontend** — built with React, TypeScript, and Vite.
+*Features depend on the current implementation and the services configured in your environment.*
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-| Component | Technologies |
-|---|---|
-| Frontend | React, TypeScript, Vite |
-| Backend | Python, FastAPI |
-| Database | SQLite, SQLAlchemy, aiosqlite |
-| Email integration | Gmail API, Google OAuth |
-| AI integration | Google Gemini via the Google GenAI SDK |
+- **Backend:** Python, FastAPI
+- **Frontend:** Web-based interface
+- **Database:** SQLite
+- **AI Integration:** LLM API
+- **Development Tools:** Git, GitHub, VS Code
 
-## How It Works
+## ⚙️ How It Works
 
-1. Connect and configure the required Google services.
-2. Retrieve emails through the Gmail integration.
-3. Process email information through the application's backend and AI functionality.
-4. Review fetched emails and their priority categories in the dashboard.
+1. **Fetch emails** from the configured email source.
+2. **Process the messages** through the backend.
+3. **Prioritize emails** to help surface important academic information.
+4. **Generate summaries** using the configured AI service.
+5. **Review everything** through the UniPulse dashboard.
 
-## Project Structure
-
-```text
-UniPulse/
-├── backend/              # FastAPI backend
-├── frontend/             # React + TypeScript application
-├── screenshots/          # Project screenshots
-├── .env.example          # Example environment configuration
-├── .gitignore
-├── requirements.txt      # Python dependencies
-└── README.md
-```
-
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- Python 3.10 or a compatible version for the project dependencies
-- Node.js and npm
-- Google credentials and API access required by the application's integrations
+Make sure you have the following installed:
+
+- Python 3.10 or a compatible version
+- Node.js and npm, if required by the frontend
+- Git
+- API credentials for any external services you configure
 
 ### 1. Clone the repository
 
@@ -81,78 +62,104 @@ git clone https://github.com/LabibCraftsSpells/UniPulse.git
 cd UniPulse
 ```
 
-### 2. Configure environment variables
+### 2. Set up the Python environment
 
-Create your local environment file:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Install the backend dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Configure environment variables
+
+Create your local environment file using the example file:
 
 ```bash
 cp .env.example .env
 ```
 
-Open `.env` and fill in the required values using the variable names and setup instructions in `.env.example`.
+Open `.env` and configure the required variables for your email provider and AI service.
 
-**Never commit your real `.env` file, API keys, OAuth secrets, or access tokens.**
+**Important:** Use your own credentials. Never commit `.env` or expose API keys, passwords, or email tokens in the repository.
 
-Complete any required Google OAuth and API configuration before testing features that depend on Gmail or Gemini.
+### 4. Start the backend
 
-### 3. Set up the backend
-
-From the project root:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-Start the backend:
+From the project root, activate the virtual environment if it is not already active, then run:
 
 ```bash
 uvicorn backend.main:app --reload
 ```
 
-The API should be available at:
+The backend should be available at:
 
-- **Backend:** http://localhost:8000
-- **API documentation:** http://localhost:8000/docs
+- **API:** http://127.0.0.1:8000
+- **API documentation:** http://127.0.0.1:8000/docs
 
-### 4. Set up the frontend
+### 5. Start the frontend
 
-Open a second terminal and run:
+Run the frontend using the commands and package manager specified by its `package.json`. For a typical npm-based frontend:
 
 ```bash
-cd UniPulse/frontend
+cd frontend
 npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite, usually http://localhost:5173.
+Open the local URL printed in your terminal, commonly:
 
-Keep the backend and frontend running while using the application.
+http://localhost:5173
 
-## Security and Privacy
+*If your project uses a different frontend directory or start command, follow the configuration in that directory.*
 
-- Keep API keys, OAuth client secrets, and access tokens out of source control.
-- Store private configuration in your local `.env` file.
-- Use the example environment file to document the required configuration without exposing real credentials.
-- Email content may contain personal or sensitive information. Use appropriate care when processing it with external AI services.
+## 📁 Project Structure
 
-## Future Improvements
+```text
+UniPulse/
+├── backend/          # Backend application and API
+├── frontend/         # User interface
+├── screenshots/      # Project screenshots
+├── .env.example      # Example environment configuration
+├── .gitignore        # Files excluded from Git
+├── README.md         # Project documentation
+└── requirements.txt  # Python dependencies
+```
 
-Potential areas for further development include:
+*The structure above highlights the main project components; individual files may vary.*
 
-- More granular email priority controls
-- Customizable academic email categories
-- Reminders for deadlines and important announcements
-- Improved filtering and search
-- More detailed summaries of lengthy university emails
+## 🔐 Security & Privacy
 
-## Author
+- Store credentials and API keys in your local `.env` file.
+- Keep `.env`, local databases, and other sensitive files out of version control.
+- Use `.env.example` only for placeholder values and configuration guidance.
+- Review email-provider permissions before connecting an account.
+- Avoid using real personal or university emails in public demos or screenshots.
+
+UniPulse is a personal development project. Review its configuration and security practices before using it with sensitive email accounts.
+
+## 🗺️ Future Improvements
+
+- [ ] Improve email priority classification.
+- [ ] Add filters for categories such as assignments, exams, announcements, and deadlines.
+- [ ] Improve AI-generated summaries and action-item extraction.
+- [ ] Add deadline and task reminders.
+- [ ] Improve loading states, error handling, and overall user experience.
+- [ ] Add automated tests and more comprehensive documentation.
+
+## 🎯 Project Goal
+
+The goal of UniPulse is to make university email management less overwhelming by helping students quickly understand their messages and identify what needs attention.
+
+## 👨‍💻 Author
 
 **LabibCraftsSpells**
 
 GitHub: [@LabibCraftsSpells](https://github.com/LabibCraftsSpells)
 
-## Disclaimer
+---
 
-UniPulse is a student-built project. Gmail access, AI analysis, and other integrations depend on the application's configuration and the permissions granted to the connected services.
+*Built as a student project exploring AI-powered productivity tools, backend development, and practical application building.*
