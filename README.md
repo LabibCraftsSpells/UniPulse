@@ -8,9 +8,10 @@ UniPulse turns noisy university email inboxes into a high-speed, priority-sorted
 
 ## 📸 Screenshots
 
-| 3-Pane Priority Inbox | Action Center & Deadlines | Email Detail & Safe Body |
+| 1. Login Page | 2. Main Inbox Dashboard | 3. High-Priority Email & AI Summary |
 | :---: | :---: | :---: |
-| ![Dashboard](screenshots/dashboard.png) | ![High Priority](screenshots/high-priority.png) | ![Fetched Emails](screenshots/fetched-emails.png) |
+| ![Login](screenshots/login.png) | ![Dashboard](screenshots/dashboard.png) | ![High-Priority Email & AI Summary](screenshots/high-priority-summary.png) |
+| *Secure Google OAuth 2.0 authentication for university email accounts.* | *3-pane academic command center with sub-second cached browsing, priority filters, and course tags.* | *Selected course email showing high-priority status, grounded AI summary, extracted deadlines, and action items.* |
 
 ---
 
