@@ -1,48 +1,78 @@
-# UniPulse
+# UniPulse — AI-Powered University Assistant
 
-**An AI-powered university assistant for academic email and student workflows.**
+> A smarter way to manage university emails and prioritize what matters.
 
-UniPulse is a full-stack web application built to help students manage academic communication using Gmail integration and AI-powered email analysis.
+UniPulse is an AI-powered university email assistant designed to help students organize incoming academic emails, understand important messages, and identify what needs their attention.
+
+Built with React, TypeScript, FastAPI, and Google's AI and Gmail services, UniPulse brings email fetching and AI-assisted prioritization into one interface.
+
+## Screenshots
+
+### Dashboard
+
+Your central view for working with university emails.
+
+![UniPulse Dashboard](screenshots/dashboard.png)
+
+### Fetched Emails
+
+View emails retrieved through the email integration.
+
+![UniPulse Fetched Emails](screenshots/fetched-emails.png)
+
+### Low-Priority Emails
+
+See emails categorized as lower priority to help focus on more important messages first.
+
+![UniPulse Low-Priority Emails](screenshots/low-priority.png)
 
 ## Features
 
-- Gmail integration through Google APIs
-- AI-powered email analysis using Google Gemini
-- React-based dashboard
-- Backend authentication and profile management
-- Local database support using SQLite
+- **Email integration** — retrieve university emails through the Gmail integration.
+- **AI-assisted email analysis** — use Google's AI services to help process academic email content.
+- **Email prioritization** — organize messages by priority to make important information easier to find.
+- **Dashboard interface** — access email-related features through a central web interface.
+- **Backend API** — handle application logic through a FastAPI backend.
+- **Database integration** — use SQLite with SQLAlchemy for application data.
+- **Modern frontend** — built with React, TypeScript, and Vite.
 
 ## Tech Stack
 
-**Frontend**
-- React
-- TypeScript
-- Vite
-- CSS
+| Component | Technologies |
+|---|---|
+| Frontend | React, TypeScript, Vite |
+| Backend | Python, FastAPI |
+| Database | SQLite, SQLAlchemy, aiosqlite |
+| Email integration | Gmail API, Google OAuth |
+| AI integration | Google Gemini via the Google GenAI SDK |
 
-**Backend**
-- Python
-- FastAPI
-- SQLAlchemy
-- SQLite and aiosqlite
-- Google OAuth and Gmail API
-- Google Gemini API
+## How It Works
+
+1. Connect and configure the required Google services.
+2. Retrieve emails through the Gmail integration.
+3. Process email information through the application's backend and AI functionality.
+4. Review fetched emails and their priority categories in the dashboard.
 
 ## Project Structure
 
-- `backend/` — FastAPI backend, authentication, Gmail integration, and AI analysis
-- `frontend/` — React and TypeScript frontend
-- `requirements.txt` — Python dependencies
-- `.env.example` — Environment configuration template
+```text
+UniPulse/
+├── backend/              # FastAPI backend
+├── frontend/             # React + TypeScript application
+├── screenshots/          # Project screenshots
+├── .env.example          # Example environment configuration
+├── .gitignore
+├── requirements.txt      # Python dependencies
+└── README.md
+```
 
-## Run Locally
+## Getting Started
 
 ### Prerequisites
 
-- Python
+- Python 3.10 or a compatible version for the project dependencies
 - Node.js and npm
-- Google OAuth and Gmail API configuration
-- Gemini API key
+- Google credentials and API access required by the application's integrations
 
 ### 1. Clone the repository
 
@@ -53,13 +83,21 @@ cd UniPulse
 
 ### 2. Configure environment variables
 
+Create your local environment file:
+
 ```bash
 cp .env.example .env
 ```
 
-Configure the required values in your local `.env` file. Never commit real API keys, passwords, OAuth secrets, or tokens.
+Open `.env` and fill in the required values using the variable names and setup instructions in `.env.example`.
 
-### 3. Install backend dependencies
+**Never commit your real `.env` file, API keys, OAuth secrets, or access tokens.**
+
+Complete any required Google OAuth and API configuration before testing features that depend on Gmail or Gemini.
+
+### 3. Set up the backend
+
+From the project root:
 
 ```bash
 python3 -m venv .venv
@@ -67,19 +105,20 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Start the backend
-
-From the project root:
+Start the backend:
 
 ```bash
 uvicorn backend.main:app --reload
 ```
 
-If enabled, the FastAPI documentation is available at `http://127.0.0.1:8000/docs`.
+The API should be available at:
 
-### 5. Start the frontend
+- **Backend:** http://localhost:8000
+- **API documentation:** http://localhost:8000/docs
 
-Open a second Terminal window:
+### 4. Set up the frontend
+
+Open a second terminal and run:
 
 ```bash
 cd UniPulse/frontend
@@ -87,14 +126,33 @@ npm install
 npm run dev
 ```
 
-Open the local URL displayed by Vite.
+Open the local URL printed by Vite, usually http://localhost:5173.
 
-## Project Status
+Keep the backend and frontend running while using the application.
 
-UniPulse has been run locally during development. Further configuration may be required to run it on another machine or deploy it publicly.
+## Security and Privacy
+
+- Keep API keys, OAuth client secrets, and access tokens out of source control.
+- Store private configuration in your local `.env` file.
+- Use the example environment file to document the required configuration without exposing real credentials.
+- Email content may contain personal or sensitive information. Use appropriate care when processing it with external AI services.
+
+## Future Improvements
+
+Potential areas for further development include:
+
+- More granular email priority controls
+- Customizable academic email categories
+- Reminders for deadlines and important announcements
+- Improved filtering and search
+- More detailed summaries of lengthy university emails
 
 ## Author
 
 **LabibCraftsSpells**
 
-GitHub: https://github.com/LabibCraftsSpells
+GitHub: [@LabibCraftsSpells](https://github.com/LabibCraftsSpells)
+
+## Disclaimer
+
+UniPulse is a student-built project. Gmail access, AI analysis, and other integrations depend on the application's configuration and the permissions granted to the connected services.
