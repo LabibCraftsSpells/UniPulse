@@ -1,22 +1,79 @@
 @import "tailwindcss";
 
-/*
-  Base styles for the app.
-  Tailwind v4 uses @import instead of @tailwind directives.
-  All utility classes (like "bg-white", "text-lg", "p-4") are
-  available automatically.
-*/
+@custom-variant dark (&:where(.dark, .dark *));
 
-/* Custom CSS variables for our design system */
+:root {
+  --brand-primary: #2563eb;
+  --brand-primary-dark: #1d4ed8;
+  --bg-app: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-dark: #f1f5f9;
+  --bg-surface-elevated: #ffffff;
+  --bg-surface-muted: #f8fafc;
+  --border-color: #e2e8f0;
+  --border-color-subtle: #f1f5f9;
+  --text-color: #0f172a;
+  --text-secondary-color: #64748b;
+  --text-muted-color: #94a3b8;
+}
+
+.dark {
+  --brand-primary: #3b82f6;
+  --brand-primary-dark: #60a5fa;
+  --bg-app: #090d16;
+  --bg-surface: #0f172a;
+  --bg-surface-dark: #1e293b;
+  --bg-surface-elevated: #151e2e;
+  --bg-surface-muted: #0b1120;
+  --border-color: #1e293b;
+  --border-color-subtle: #162032;
+  --text-color: #f8fafc;
+  --text-secondary-color: #94a3b8;
+  --text-muted-color: #64748b;
+}
+
 @theme {
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
+  --color-primary: var(--brand-primary);
+  --color-primary-dark: var(--brand-primary-dark);
   --color-danger: #ef4444;
   --color-warning: #f59e0b;
   --color-success: #22c55e;
-  --color-surface: #f8fafc;
-  --color-surface-dark: #f1f5f9;
-  --color-border: #e2e8f0;
-  --color-text: #0f172a;
-  --color-text-secondary: #64748b;
+  --color-surface: var(--bg-surface);
+  --color-surface-dark: var(--bg-surface-dark);
+  --color-surface-elevated: var(--bg-surface-elevated);
+  --color-surface-muted: var(--bg-surface-muted);
+  --color-border: var(--border-color);
+  --color-text: var(--text-color);
+  --color-text-secondary: var(--text-secondary-color);
+}
+
+/* Base resets & typography */
+html {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+body {
+  background-color: var(--bg-surface);
+  color: var(--text-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbars for clean SaaS feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary-color);
 }

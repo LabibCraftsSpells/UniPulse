@@ -19,6 +19,7 @@ env/
 # SQLite database
 *.db
 *.sqlite3
+*.bak
 
 # Node / Frontend
 node_modules/

@@ -44,6 +44,7 @@ from backend.database import init_db
 from backend.auth.router import router as auth_router
 from backend.auth.profile_router import router as profile_router
 from backend.gmail.router import router as gmail_router
+from backend.gmail.tasks_router import router as tasks_router
 
 
 @asynccontextmanager
@@ -109,7 +110,8 @@ app.add_middleware(
 # --- Register Routers ---
 # Each router adds its endpoints to the app
 app.include_router(auth_router)       # /auth/*
-app.include_router(gmail_router)      # /api/emails, /api/dashboard
+app.include_router(gmail_router)      # /api/emails, /api/sync, /api/briefing
+app.include_router(tasks_router)      # /api/tasks
 app.include_router(profile_router)    # /api/profile
 
 

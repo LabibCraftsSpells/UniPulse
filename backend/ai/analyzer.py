@@ -1,108 +1,264 @@
 """
-AI analyzer — handles communication with Gemini API.
-
-KEY CONCEPT: Structured Output
--------------------------------
-LLMs usually output raw text. By passing our Pydantic `EmailAnalysisResult` schema 
-to `response_schema`, we FORCE Gemini to output perfectly formatted JSON matching 
-our schema. This means no manual regex parsing or JSON fixing!
-
-KEY CONCEPT: System Instructions
---------------------------------
-The `system_instruction` is the foundational rulebook for the AI. We use it to 
-enforce the strict "no hallucination" rules requested by the user.
-
-KEY CONCEPT: Concurrency
--------------------------
-Calling Gemini for 10 emails one by one would take 30+ seconds. We use `asyncio.gather` 
-to analyze all 10 emails simultaneously in parallel, reducing total time to ~3-5 seconds.
+AI analyzer — Gemini structured analysis, background processing queue, and task extraction for UniPulse 2.0.
 """
 
 import asyncio
+import json
+import time
+from typing import Dict
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, and_
+
 from google import genai
 from google.genai import types
 from fastapi import HTTPException, status
 
 from backend.config import settings
-from backend.schemas import EmailCardResponse, EmailAnalysisResult
+from backend.models import EmailAnalysis, ActionTask, StudentProfile, utcnow
+from backend.schemas import EmailAnalysisResult, ExtractedActionItem, ExtractedDeadline, ExtractedLink
+from backend.database import async_session
 
-async def analyze_emails(emails: list[EmailCardResponse]) -> list[EmailCardResponse]:
+# Concurrency semaphore to respect Gemini rate limits
+_GEMINI_SEMAPHORE = asyncio.Semaphore(4)
+
+# In-memory deduplication of active analysis tasks: message_id -> asyncio.Task
+_ACTIVE_ANALYSES: Dict[str, asyncio.Task] = {}
+
+
+SYSTEM_INSTRUCTION = """
+You are an AI academic command center assistant for university students analyzing official university emails.
+Read the provided university email carefully and extract structured academic intelligence.
+
+CRITICAL RULES:
+1. NEVER INVENT or hallucinate any deadlines, dates, times, course requirements, exam schedules, actions, or URLs.
+2. If an email does NOT explicitly state a deadline, return an empty array for deadlines.
+3. If no student action is required, return an empty array for action_items.
+4. If a course code (like CSE231, PHY108, MAT120, HIS102, ENG102) is mentioned or clearly identifiable, extract it into 'course'. Otherwise return null.
+5. Strictly separate objective facts from interpretation in 'what_this_means'.
+6. Treat security notices, social invites, newsletters, and promotional university emails appropriately: do not mark everything as high priority.
+7. 'priority' must be:
+   - 'high': Immediate action required, near-term assignment/exam/quiz deadline, urgent registration or clearance issue.
+   - 'medium': Important announcements, syllabus/class schedule updates, academic guidance with no immediate emergency.
+   - 'low': General campus club activities, promotional events, non-urgent university broad announcements.
+8. 'priority_reason' must briefly state WHY based on real email content (e.g. "Contains submission deadline for assignment 2").
+"""
+
+
+async def analyze_email_record(email: EmailAnalysis, db: AsyncSession) -> EmailAnalysisResult | None:
     """
-    Takes a list of fetched emails, sends them to Gemini for structured analysis,
-    and attaches the result to the `analysis` field of each email.
+    Perform grounded Gemini analysis for a single email record and persist
+    structured fields and ActionTasks into SQLite.
     """
     if not settings.GEMINI_API_KEY:
-        print("Warning: GEMINI_API_KEY not set. Skipping analysis.")
-        return emails
+        print("[AI WARNING] GEMINI_API_KEY is not configured.")
+        return None
 
-    # Initialize the Gemini client
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
-    
-    system_instruction = """
-    You are an AI assistant for university students analyzing their inbox.
-    Read the provided email and extract structured information.
-    
-    CRITICAL RULES:
-    1. NEVER invent a deadline, URL, requirement, sender, event, or action.
-    2. If a deadline is not EXPLICITLY stated, return an empty array for deadlines.
-    3. If no action is explicitly required, set action_required to false and action_items to [].
-    4. Distinguish facts from interpretation in 'what_this_means'.
-    5. Properly categorize security, social, newsletters, and promotional emails. Do not automatically mark them as high priority unless they require urgent action.
-    6. Ensure the date, subject, and sender fields reflect the provided email headers.
-    """
 
-    async def analyze_single(email: EmailCardResponse) -> bool:
-        # Skip if there's no body to analyze
-        if not email.full_body:
-            return False
-        
-        # Build the prompt
-        prompt = (
-            f"Sender: {email.sender}\n"
-            f"Subject: {email.subject}\n"
-            f"Date: {email.received_at}\n\n"
-            f"Body:\n{email.full_body}"
-        )
-        
+    # Fetch student profile for personalized academic relevance
+    prof_res = await db.execute(select(StudentProfile).where(StudentProfile.user_id == email.user_id))
+    profile = prof_res.scalar_one_or_none()
+    profile_ctx = ""
+    if profile:
+        profile_ctx = f"\nStudent Profile Context: University: {profile.university}, Major: {profile.major}, Current Courses: {profile.courses}"
+
+    prompt = (
+        f"Sender: {email.sender_name or ''} <{email.sender}>\n"
+        f"Subject: {email.subject}\n"
+        f"Date: {email.received_at}\n"
+        f"{profile_ctx}\n\n"
+        f"Email Content:\n{email.body_text or email.snippet or ''}"
+    )
+
+    t_start = time.perf_counter()
+    async with _GEMINI_SEMAPHORE:
         try:
-            # Call Gemini using the async client wrapper
-            # We enforce JSON output matching our Pydantic schema
             response = await client.aio.models.generate_content(
                 model=settings.GEMINI_MODEL,
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
                     response_schema=EmailAnalysisResult,
-                    system_instruction=system_instruction,
-                    temperature=0.1, # Low temperature makes it factual and deterministic
+                    system_instruction=SYSTEM_INSTRUCTION,
+                    temperature=0.1,  # Highly deterministic factual extraction
                 )
             )
-            
-            # Parse the JSON response back into our Pydantic model
-            email.analysis = EmailAnalysisResult.model_validate_json(response.text)
-            return True
-            
+            raw_text = response.text
+            parsed = EmailAnalysisResult.model_validate_json(raw_text)
         except Exception as e:
-            print(f"Error analyzing email {email.gmail_message_id}: {str(e)}")
-            # We will return the exception so we can inspect it if everything fails
-            return e
+            t_fail = (time.perf_counter() - t_start) * 1000
+            print(f"[AI ERROR] Analysis failed for {email.gmail_message_id} in {t_fail:.1f}ms: {e}")
+            email.status = "failed"
+            await db.commit()
+            return None
 
-    # Only analyze the first 10 emails for the prototype batch
-    batch_to_analyze = emails[:10]
-    
-    # Run all API calls in parallel
-    results = await asyncio.gather(*(analyze_single(email) for email in batch_to_analyze))
-    
-    # Check if we attempted to analyze at least one email, but ALL of them failed
-    attempted = len([r for r in results if r is not False])
-    successes = len([r for r in results if r is True])
-    
-    if attempted > 0 and successes == 0:
-        # Get the first actual exception to return to the user
-        first_error = next((r for r in results if isinstance(r, Exception)), "Unknown error")
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Gemini AI analysis failed for all emails. Error: {str(first_error)}"
+    t_ai = (time.perf_counter() - t_start) * 1000
+
+    # Persist structured analysis fields in SQLite
+    email.status = "completed"
+    email.priority = parsed.priority
+    email.priority_reason = parsed.priority_reason
+    email.category = parsed.category
+    email.course = parsed.course
+    email.summary = parsed.summary
+    email.what_this_means = parsed.what_this_means
+    email.action_items = json.dumps([item.model_dump() for item in parsed.action_items])
+    email.deadlines = json.dumps([dl.model_dump() for dl in parsed.deadlines])
+    email.important_links = json.dumps([link.model_dump() for link in parsed.important_links])
+    email.analysis = raw_text
+    email.analyzed_at = utcnow()
+
+    # Synchronize action tasks into ActionCenter table
+    # Avoid duplicate tasks by checking existing tasks for this message
+    existing_tasks_res = await db.execute(select(ActionTask).where(ActionTask.gmail_message_id == email.gmail_message_id))
+    existing_tasks = existing_tasks_res.scalars().all()
+    existing_titles = {t.title.lower().strip() for t in existing_tasks}
+
+    new_tasks = []
+    # 1. Add extracted action items
+    for item in parsed.action_items:
+        if item.title.lower().strip() not in existing_titles:
+            new_tasks.append(
+                ActionTask(
+                    user_id=email.user_id,
+                    gmail_message_id=email.gmail_message_id,
+                    title=item.title,
+                    deadline_date=item.deadline,
+                    deadline_confidence=item.deadline_confidence,
+                    completed=False,
+                    course=parsed.course,
+                    priority=parsed.priority,
+                )
+            )
+            existing_titles.add(item.title.lower().strip())
+
+    # 2. Add extracted deadlines as actionable tasks if not already covered
+    for dl in parsed.deadlines:
+        dl_desc = f"{dl.source_text or 'Deadline'}"
+        if dl.date and dl_desc.lower().strip() not in existing_titles:
+            new_tasks.append(
+                ActionTask(
+                    user_id=email.user_id,
+                    gmail_message_id=email.gmail_message_id,
+                    title=dl_desc,
+                    deadline_date=dl.date,
+                    deadline_time=dl.time,
+                    deadline_confidence=dl.confidence,
+                    completed=False,
+                    course=parsed.course,
+                    priority=parsed.priority,
+                )
+            )
+            existing_titles.add(dl_desc.lower().strip())
+
+    if new_tasks:
+        db.add_all(new_tasks)
+
+    await db.commit()
+    print(f"[AI] Analyzed {email.gmail_message_id} ({parsed.priority.upper()}) in {t_ai:.1f}ms with {len(new_tasks)} new tasks.")
+
+    return parsed
+
+
+async def analyze_message_by_id(gmail_message_id: str, user_id: str) -> EmailAnalysis | None:
+    """
+    On-demand prioritized analysis for a single message.
+    If an analysis is already in progress, awaits the existing task.
+    """
+    # Deduplicate concurrent requests
+    if gmail_message_id in _ACTIVE_ANALYSES:
+        try:
+            await _ACTIVE_ANALYSES[gmail_message_id]
+        except Exception:
+            pass
+
+    async with async_session() as db:
+        res = await db.execute(
+            select(EmailAnalysis).where(
+                EmailAnalysis.gmail_message_id == gmail_message_id,
+                EmailAnalysis.user_id == user_id
+            )
         )
-    
+        email = res.scalar_one_or_none()
+        if not email:
+            return None
+
+        # Return cached analysis immediately if already completed
+        if email.status == "completed" and email.analysis:
+            return email
+
+        email.status = "analyzing"
+        await db.commit()
+
+        # Wrap in active task tracker
+        task = asyncio.create_task(analyze_email_record(email, db))
+        _ACTIVE_ANALYSES[gmail_message_id] = task
+        try:
+            await task
+        finally:
+            _ACTIVE_ANALYSES.pop(gmail_message_id, None)
+
+        await db.refresh(email)
+        return email
+
+
+async def process_pending_email_batch(user_id: str, limit: int = 15):
+    """
+    Background worker that picks up pending emails and analyzes them sequentially or in small parallel batches.
+    """
+    async with async_session() as db:
+        res = await db.execute(
+            select(EmailAnalysis)
+            .where(
+                EmailAnalysis.user_id == user_id,
+                EmailAnalysis.status == "pending"
+            )
+            .order_by(EmailAnalysis.received_at.desc())
+            .limit(limit)
+        )
+        pending_emails = res.scalars().all()
+
+        if not pending_emails:
+            return
+
+        print(f"[AI QUEUE] Starting concurrent background analysis for {len(pending_emails)} pending emails...")
+        t_batch_start = time.perf_counter()
+
+        async def _run_one(email_id: str):
+            # Dedicated session per concurrent task prevents SQLAlchemy session conflict
+            async with async_session() as task_db:
+                email_res = await task_db.execute(
+                    select(EmailAnalysis).where(EmailAnalysis.gmail_message_id == email_id)
+                )
+                em = email_res.scalar_one_or_none()
+                if not em or em.status == "completed":
+                    return
+                em.status = "analyzing"
+                await task_db.commit()
+                try:
+                    await analyze_email_record(em, task_db)
+                except Exception as err:
+                    print(f"[AI QUEUE ERROR] {email_id}: {err}")
+
+        scheduled = []
+        for email in pending_emails:
+            if email.gmail_message_id in _ACTIVE_ANALYSES:
+                continue
+            task = asyncio.create_task(_run_one(email.gmail_message_id))
+            _ACTIVE_ANALYSES[email.gmail_message_id] = task
+            scheduled.append((email.gmail_message_id, task))
+
+        if scheduled:
+            await asyncio.gather(*(t for _, t in scheduled), return_exceptions=True)
+            for mid, _ in scheduled:
+                _ACTIVE_ANALYSES.pop(mid, None)
+
+            t_batch = (time.perf_counter() - t_batch_start) * 1000
+            avg_per = t_batch / len(scheduled) if scheduled else 0
+            print(f"[AI QUEUE] Background analysis batch of {len(scheduled)} emails completed in {t_batch:.1f}ms ({avg_per:.1f}ms/email).")
+
+
+# Backward compatibility for existing endpoints
+async def analyze_emails(emails):
+    """Legacy wrapper for older endpoints."""
     return emails

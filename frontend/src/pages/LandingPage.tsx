@@ -1,4 +1,5 @@
 import { Mail, ArrowRight, Shield, Zap, Brain } from 'lucide-react'
+import { ThemeToggle } from '../components/ThemeToggle'
 
 /**
  * Landing page — the first thing users see.
@@ -17,20 +18,23 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface text-text">
       {/* Navigation */}
-      <nav className="border-b border-border">
+      <nav className="border-b border-border bg-surface">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img src="/favicon.svg" alt="UniPulse Logo" className="w-6 h-6" />
             <span className="font-semibold text-text tracking-tight">UniPulse</span>
           </div>
-          <button
-            onClick={handleConnect}
-            className="text-sm text-primary hover:text-primary-dark font-medium transition-colors"
-          >
-            Sign in
-          </button>
+          <div className="flex items-center gap-3">
+            <ThemeToggle compact />
+            <button
+              onClick={handleConnect}
+              className="text-sm text-primary hover:text-primary-dark font-medium transition-colors"
+            >
+              Sign in
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -163,8 +167,8 @@ function Feature({
   description: string
 }) {
   return (
-    <div className="p-6 rounded-xl border border-border bg-white">
-      <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-primary mb-4">
+    <div className="p-6 rounded-2xl border border-border bg-surface-elevated shadow-xs">
+      <div className="w-10 h-10 rounded-xl bg-surface-dark flex items-center justify-center text-primary mb-4">
         {icon}
       </div>
       <h3 className="font-semibold text-text mb-2">{title}</h3>

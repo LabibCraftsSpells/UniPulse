@@ -63,8 +63,10 @@ class Settings:
         "sqlite+aiosqlite:///./student_mail_copilot.db",
     )
 
-    # --- Email fetching ---
-    MAX_EMAILS_TO_FETCH: int = 30  # How many recent emails to pull from Gmail
+    # --- Email fetching & Synchronization ---
+    INITIAL_SYNC_MAX_EMAILS: int = int(os.getenv("INITIAL_SYNC_MAX_EMAILS", "0"))  # 0 = Entire Mailbox without artificial caps
+    MAX_EMAILS_TO_FETCH: int = int(os.getenv("MAX_EMAILS_TO_FETCH", "100"))
+    SYNC_BATCH_SIZE: int = 50
 
 
 # Single global instance — import this wherever you need settings
